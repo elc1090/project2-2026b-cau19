@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const supabase = require('./database');
 
@@ -5,7 +6,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static('public'));
+// Caminho absoluto (baseado em __dirname, nao no diretorio de trabalho atual)
+// porque em ambiente serverless (Vercel) o cwd nao e garantido ser a raiz do
+// projeto, o que fazia express.static('public') nao achar a pasta.
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Retorna o top 10 do ranking, do maior score para o menor
 app.get('/api/scores', async (req, res) => {
