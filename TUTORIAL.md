@@ -1,12 +1,14 @@
-# Tutorial: Dino Game com persistência local (SQLite)
+# Tutorial: Dino Game com persistência de dados
 
-Este tutorial explica, passo a passo, como o projeto foi (ou deve ser) construído. A ideia é que você
-consiga reproduzir cada etapa entendendo o "porquê", não só copiar o código pronto. Use isso como base
-para escrever a seção **Processo** do seu README com suas próprias palavras.
+Este tutorial explica, passo a passo, como o projeto foi construído. A ideia é que você consiga
+reproduzir cada etapa entendendo o "porquê", não só copiar o código pronto. Use isso como base para
+escrever a seção **Processo** do seu README com suas próprias palavras.
 
-Stack: **Node.js + Express** no backend, **SQLite** (via `better-sqlite3`) como banco local, e
-**HTML/CSS/JavaScript puro com Canvas** no frontend. Depois migramos o banco para o Supabase (Postgres)
-e fazemos o deploy.
+Stack: **Node.js + Express** no backend, **HTML/CSS/JavaScript puro com Canvas** no frontend, e
+**Supabase (PostgreSQL)** como banco de dados. O banco começou como **SQLite** local (fase 1, arquivo
+`database.db`) só pra aprender persistência sem depender de internet/conta em serviço nenhum, e depois
+foi trocado pelo Supabase de verdade (fase 2). O código de SQLite não existe mais no projeto — os
+Passos 1 a 7 abaixo ficam registrados como histórico de como a fase 1 foi construída.
 
 ---
 
@@ -123,23 +125,123 @@ login — só o nome digitado ao final da partida.
 
 ---
 
-## Fase 2 — Banco de dados real (Supabase) e deploy
+## Fase 2 — Banco de dados real (Supabase)
 
-> ⚠️ **Status: ainda não iniciada.** Até agora só existe o banco SQLite local (`database.db`). Não há
-> projeto criado no Supabase, nem deploy. Os passos abaixo são o planejamento de como isso vai ser
-> feito quando a fase 1 estiver validada.
+> ⚠️ **Status: banco real integrado e testado localmente. Deploy público ainda não feito.** O servidor
+> já lê e grava no Supabase quando você roda `npm start` na sua máquina. Falta só publicar o projeto na
+> internet (Vercel/Render) e atualizar a seção **Acesso** do README com a URL.
 
-Isso vem depois que o jogo estiver funcionando 100% local. Resumo do que muda:
+### Passo 8: Criar o projeto no Supabase
 
-1. Criar um projeto no [Supabase](https://supabase.com) (Postgres gerenciado).
-2. Criar a tabela `scores` no Supabase (mesmas colunas de antes, mas em SQL do Postgres).
-3. Trocar `better-sqlite3` pelo cliente do Supabase (`@supabase/supabase-js`) ou por uma conexão Postgres
-   (`pg`), usando variáveis de ambiente (`SUPABASE_URL`, `SUPABASE_KEY`) em vez de deixar credenciais no
-   código.
-4. Ajustar `database.js` para essa nova conexão — as rotas do `server.js` praticamente não mudam, porque
-   a lógica de "buscar top 10" e "inserir score" continua a mesma, só troca *onde* os dados são salvos.
-5. Fazer deploy do backend (Render ou Vercel) e do frontend (pode ser o mesmo serviço, servindo a pasta
-   `public/`).
-6. Atualizar a seção **Acesso** do README com a URL publicada.
+Em [supabase.com/dashboard](https://supabase.com/dashboard), criar um novo projeto (é um banco
+PostgreSQL gerenciado, gratuito no plano free). Guarde a senha do banco em local seguro — ela não é a
+mesma coisa que as chaves de API que usamos no `.env`.
 
-Vamos detalhar essa fase quando o jogo local estiver pronto e testado.
+### Passo 9: Criar a tabela via migration SQL (`supabase/migration.sql`)
+
+Em vez de criar a tabela clicando manualmente no Table Editor, escrevemos o SQL num arquivo versionado
+no Git (`supabase/migration.sql`) e rodamos ele no **SQL Editor** do painel do Supabase. Isso deixa
+documentado e repetível como o banco foi criado — se precisar recriar o projeto do zero, é só rodar o
+arquivo de novo.
+
+```sql
+create table if not exists scores (
+  id bigint generated always as identity primary key,
+  name text not null,
+  score integer not null,
+  created_at timestamptz not null default now()
+);
+
+alter table scores enable row level security;
+
+create policy "Qualquer pessoa pode ler o ranking"
+  on scores for select
+  to anon
+  using (true);
+
+create policy "Qualquer pessoa pode inserir um score"
+  on scores for insert
+  to anon
+  with check (true);
+```
+
+Dois pontos importantes de segurança:
+- **Row Level Security (RLS) ligado**: por padrão, com RLS ativo e sem nenhuma policy, *ninguém* acessa
+  a tabela — nem para ler. As policies acima são a exceção explícita: liberam `select` e `insert` para
+  quem usa a chave pública (`anon`).
+- **Sem policy de `update`/`delete`**: mesmo alguém com a chave pública em mãos (ela fica visível no
+  tráfego de rede do navegador, então não é segredo) não consegue alterar ou apagar scores já salvos.
+  Isso é diferente de simplesmente desligar o RLS, que liberaria tudo.
+
+### Passo 10: Pegar as chaves e configurar o `.env`
+
+No painel do Supabase: **Project Settings → API** (pode aparecer como "Data API" / "API Keys",
+dependendo da versão do painel). De lá, copiar:
+- **Project URL** (algo como `https://xxxxxxxx.supabase.co`)
+- A chave **pública** — hoje o Supabase chama de `anon` / `public` ou `publishable` (prefixo
+  `sb_publishable_...`). **Nunca** usar a chave `service_role` / `secret` no `.env` de um projeto que
+  fica rodando com policies de RLS liberadas por engano; a `service_role` ignora RLS completamente.
+
+Essas duas informações vão no arquivo `.env` (nunca no código nem no README — por isso ele está no
+`.gitignore`; use `.env.example` como referência de quais variáveis preencher):
+
+```
+SUPABASE_URL=https://xxxxxxxx.supabase.co
+SUPABASE_KEY=sb_publishable_xxxxxxxxxxxxxxxxxxxx
+```
+
+### Passo 11: Trocar a conexão do banco (`database.js` e `server.js`)
+
+`database.js` deixou de abrir um arquivo SQLite e passou a criar um cliente do Supabase, lendo a URL e
+a chave do `.env` (via `dotenv`):
+
+```js
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+module.exports = supabase;
+```
+
+A diferença mais importante no `server.js`: `better-sqlite3` era **síncrono** (`db.prepare(...).all()`
+retornava na hora), enquanto `supabase-js` fala com o banco pela internet, então é **assíncrono** — toda
+chamada usa `await` e retorna `{ data, error }`:
+
+```js
+app.get('/api/scores', async (req, res) => {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('name, score, created_at')
+    .order('score', { ascending: false })
+    .limit(10);
+
+  if (error) return res.status(500).json({ error: 'Erro ao buscar o ranking' });
+  res.json(data);
+});
+```
+
+A lógica (buscar top 10, inserir com validação) continua a mesma de antes — só mudou *como* o servidor
+conversa com o banco.
+
+### Passo 12: Testar localmente contra o Supabase real
+
+1. `npm start` — se faltar `SUPABASE_URL`/`SUPABASE_KEY` no `.env`, o servidor lança um erro explicando
+   o que falta, em vez de falhar silenciosamente.
+2. Jogue uma partida, salve um score.
+3. Confira no painel do Supabase, em **Table Editor → scores**, que a linha apareceu lá — não é mais um
+   arquivo local, é o banco na nuvem.
+
+---
+
+## Fase 3 — Deploy (pendente)
+
+Falta publicar o projeto na internet para ele ter uma URL pública de acesso:
+
+1. Escolher onde hospedar (Render ou Vercel são boas opções gratuitas para um projeto Node/Express).
+2. Configurar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY` no painel do serviço de deploy
+   (do mesmo jeito que estão no `.env` local — nunca commitadas no Git).
+3. Apontar o comando de start do serviço para `npm start`.
+4. Testar a URL pública e atualizar a seção **Acesso** do README.
+
+Vamos detalhar isso quando chegar a hora do deploy.

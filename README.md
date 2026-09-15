@@ -7,10 +7,9 @@
 
 ## Acesso
 
-> ⚠️ **Ainda não há deploy nem banco de dados no Supabase configurado.** No momento o projeto roda
-> apenas localmente, com o banco SQLite em arquivo (fase 1 do desenvolvimento — veja
-> [TUTORIAL.md](./TUTORIAL.md)). A URL de acesso e a migração para o Supabase serão adicionadas na
-> fase 2.
+> ⚠️ **Ainda não há deploy público.** O banco de dados já é o Supabase (PostgreSQL) de verdade, mas o
+> jogo só roda localmente por enquanto (`npm start`, `http://localhost:3000`). A URL pública será
+> adicionada aqui depois do deploy (Vercel/Render — veja [TUTORIAL.md](./TUTORIAL.md)).
 
 ## Desenvolvedor(a)
 
@@ -60,9 +59,9 @@ Modalidade: **B** (parceria com colega usuário/cliente, para feedback de funcio
 - JavaScript (frontend com HTML5 Canvas, e backend com Node.js)
 - HTML5 e CSS3
 - Node.js + Express (servidor web e API REST)
-- SQLite via `better-sqlite3` (banco de dados local, fase 1 — em uso atualmente)
-- Supabase / PostgreSQL — **ainda não configurado**; planejado para a fase 2 (migração descrita em
-  [TUTORIAL.md](./TUTORIAL.md))
+- Supabase / PostgreSQL (`@supabase/supabase-js`) — banco de dados real, em uso atualmente
+- Row Level Security (RLS) no Postgres, com policies restringindo a chave pública a apenas
+  leitura e inserção de scores (sem update/delete)
 
 ### Ambiente de desenvolvimento
 
@@ -75,9 +74,10 @@ Modalidade: **B** (parceria com colega usuário/cliente, para feedback de funcio
 ## Referências e créditos
 
 - [Documentação do Express](https://expressjs.com/pt-br/)
-- [Documentação do better-sqlite3](https://github.com/WiseLibs/better-sqlite3)
 - [MDN — Canvas API](https://developer.mozilla.org/pt-BR/docs/Web/API/Canvas_API)
 - [Documentação do Supabase](https://supabase.com/docs)
+- [Documentação do supabase-js](https://supabase.com/docs/reference/javascript/introduction)
+- [Documentação de Row Level Security do Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - Ideia original do "Dino Game" proposta por Ricardo Facco Pigatto no documento de definições da
   disciplina.
 
