@@ -48,6 +48,12 @@ app.post('/api/scores', async (req, res) => {
   res.status(201).json(data);
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
+// Na Vercel o servidor roda como funcao serverless (o modulo e importado,
+// nao executado com "node server.js"), entao so chamamos listen() localmente.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
