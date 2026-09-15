@@ -241,28 +241,34 @@ conversa com o banco.
 
 O que já foi feito no código para isso funcionar:
 
-- `server.js` agora também faz `module.exports = app`, além de `app.listen(...)`. Isso é necessário
-  porque na Vercel o servidor não roda com `node server.js` continuamente — a Vercel importa o `app`
-  exportado e o chama como função serverless a cada requisição. Por isso o `app.listen(...)` está dentro
-  de `if (!process.env.VERCEL) { ... }`: localmente (`npm start`) ele sobe um servidor normal; na Vercel,
-  essa parte é ignorada.
-- `api/index.js` só reexporta esse mesmo app (`module.exports = require('../server.js')`). A Vercel
-  reconhece automaticamente qualquer arquivo dentro de `api/` como uma função serverless — não precisa
-  configurar isso manualmente.
-- `vercel.json` reescreve só as rotas `/api/*` pra essa função. As demais (`/`, `/game.js`,
-  `/style.css`) **não** passam pela função: a Vercel serve a pasta `public/` da raiz do projeto
-  automaticamente como arquivos estáticos, sem precisar de configuração.
-  > A primeira versão do `vercel.json` mandava *tudo* (inclusive os arquivos estáticos) para dentro da
-  > função Node, e isso quebrava (`Cannot GET /`): o `express.static('public')` roda em tempo de
-  > execução, e o build da função não empacota automaticamente uma pasta só porque ela é lida em
-  > runtime — só o que é importado com `require`/`import` é rastreado. Separando estático (servido pela
-  > Vercel direto) de API (função) esse problema desaparece.
+- `server.js` também faz `module.exports = app`, além de `app.listen(...)`. Isso é necessário porque na
+  Vercel o servidor não roda com `node server.js` continuamente — a Vercel importa o `app` exportado e o
+  chama a cada requisição. Por isso o `app.listen(...)` está dentro de `if (!process.env.VERCEL) { ... }`:
+  localmente (`npm start`) ele sobe um servidor normal; na Vercel, essa parte é ignorada.
+- **Sem `vercel.json` nenhum.** A Vercel tem detecção nativa de frameworks de backend (Express incluso):
+  ela reconhece o `express` no `package.json` e o `server.js` como entrada, e trata o app inteiro — rotas
+  de API e `express.static('public')` — como um único serviço, com o caminho original da requisição
+  preservado.
+
+> Duas tentativas anteriores com `vercel.json` manual falharam:
+> 1. Mandar tudo pra uma função `@vercel/node` "crua": o build só empacota o que é importado via
+>    `require`, então a pasta `public/` (só referenciada em runtime pelo `express.static`) ficava de
+>    fora — resultado: `Cannot GET /`.
+> 2. Separar `api/` (função) de `public/` (estático) com `rewrites` manuais: a Vercel avisou que, em
+>    "backend framework projects", rewrite agora roteia usando o **destino** reescrito — meu rewrite
+>    `/api/:path*` → `/api` fazia o Express receber só `/api`, nunca `/api/scores`.
+>
+> A solução foi simplesmente não brigar com a detecção nativa: deixar só o `server.js` de sempre, sem
+> nenhuma configuração extra.
 
 O que falta fazer no painel da Vercel:
 
 1. Importar o repositório do GitHub em [vercel.com/new](https://vercel.com/new).
-2. Nas configurações do projeto, adicionar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY`
+2. Em **Project Settings → General → Framework Preset**, conferir se a Vercel detectou algo como
+   "Express" / "Node.js" (não "Other" genérico e não nenhum framework de frontend tipo Next.js). Se
+   detectou errado, trocar manualmente aqui.
+3. Nas configurações do projeto, adicionar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY`
    com os mesmos valores do `.env` local (nunca commitados no Git — são adicionados direto no painel).
-3. Fazer o deploy.
-4. Testar a URL pública gerada: jogar uma partida, salvar um score, ver se aparece no ranking.
-5. Atualizar a seção **Acesso** do README com essa URL.
+4. Fazer o (re)deploy.
+5. Testar a URL pública gerada: jogar uma partida, salvar um score, ver se aparece no ranking.
+6. Atualizar a seção **Acesso** do README com essa URL.
