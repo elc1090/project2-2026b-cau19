@@ -7,10 +7,7 @@
 
 ## Acesso
 
-> ⚠️ **Deploy na Vercel em andamento.** O projeto já está preparado (`vercel.json`), o banco de dados já
-> é o Supabase (PostgreSQL) real, mas a URL pública ainda não foi gerada. Substitua esta linha pela URL
-> assim que o deploy terminar. Até lá, roda localmente com `npm start` (`http://localhost:3000`) — veja
-> [TUTORIAL.md](./TUTORIAL.md).
+**https://project2-2026b-cau19.vercel.app**
 
 ## Desenvolvedor(a)
 
@@ -63,7 +60,7 @@ Modalidade: **B** (parceria com colega usuário/cliente, para feedback de funcio
 - Supabase / PostgreSQL (`@supabase/supabase-js`) — banco de dados real, em uso atualmente
 - Row Level Security (RLS) no Postgres, com policies restringindo a chave pública a apenas
   leitura e inserção de scores (sem update/delete)
-- Deploy: Vercel (`vercel.json` configurado; publicação em andamento)
+- Deploy: Vercel (função serverless em `api/[...path].js` reexportando o app Express)
 
 ### Ambiente de desenvolvimento
 

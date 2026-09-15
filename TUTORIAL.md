@@ -234,41 +234,50 @@ conversa com o banco.
 
 ---
 
-## Fase 3 — Deploy na Vercel (código pronto, deploy em si pendente)
+## Fase 3 — Deploy na Vercel
 
-> ⚠️ **Status: o projeto já está preparado para rodar na Vercel, mas o deploy em si (clicar em "Import
-> Project", configurar env vars, etc.) fica por sua conta.**
+> ✅ **Status: no ar.** https://project2-2026b-cau19.vercel.app — testado (`/`, `/style.css`, `/game.js`,
+> `/api/scores` todos respondendo certo, gravando e lendo do Supabase real).
 
-O que já foi feito no código para isso funcionar:
+O que ficou assim no código, depois de algumas tentativas que não funcionaram:
 
-- `server.js` também faz `module.exports = app`, além de `app.listen(...)`. Isso é necessário porque na
-  Vercel o servidor não roda com `node server.js` continuamente — a Vercel importa o `app` exportado e o
-  chama a cada requisição. Por isso o `app.listen(...)` está dentro de `if (!process.env.VERCEL) { ... }`:
-  localmente (`npm start`) ele sobe um servidor normal; na Vercel, essa parte é ignorada.
-- **Sem `vercel.json` nenhum.** A Vercel tem detecção nativa de frameworks de backend (Express incluso):
-  ela reconhece o `express` no `package.json` e o `server.js` como entrada, e trata o app inteiro — rotas
-  de API e `express.static('public')` — como um único serviço, com o caminho original da requisição
-  preservado.
+- `server.js` faz `module.exports = app` além de `app.listen(...)`. Necessário porque na Vercel o
+  servidor não roda com `node server.js` continuamente — a Vercel importa o `app` exportado e o invoca a
+  cada requisição. Por isso `app.listen(...)` fica dentro de `if (!process.env.VERCEL) { ... }`:
+  localmente (`npm start`) sobe um servidor normal; na Vercel, essa parte é ignorada.
+- `api/[...path].js` só reexporta esse mesmo app (`module.exports = require('../server.js')`). Qualquer
+  arquivo dentro de `api/` vira função serverless automaticamente — isso é o mecanismo mais básico e
+  confiável da Vercel, funciona independente de qualquer detecção de framework. O `[...path]` (colchetes)
+  é a sintaxe de "catch-all": essa única função responde por qualquer sub-caminho de `/api/*`
+  (`/api/scores`, etc.), recebendo o caminho original da requisição sem reescrita nenhuma.
+- Dentro do `server.js`, `express.static(path.join(__dirname, 'public'))` usa caminho **absoluto**
+  (baseado em `__dirname`), não `express.static('public')` (relativo). Isso importa porque, no ambiente
+  serverless da Vercel, o diretório de trabalho (`process.cwd()`) não é garantidamente a raiz do projeto
+  — com caminho relativo, o Express simplesmente não achava a pasta `public/` e toda rota que não fosse
+  `/api/*` caía no 404 padrão do Express (`Cannot GET /`).
+- **Nenhum `vercel.json`.** Nenhuma das opções acima precisa de configuração manual de rotas.
 
-> Duas tentativas anteriores com `vercel.json` manual falharam:
-> 1. Mandar tudo pra uma função `@vercel/node` "crua": o build só empacota o que é importado via
->    `require`, então a pasta `public/` (só referenciada em runtime pelo `express.static`) ficava de
->    fora — resultado: `Cannot GET /`.
-> 2. Separar `api/` (função) de `public/` (estático) com `rewrites` manuais: a Vercel avisou que, em
->    "backend framework projects", rewrite agora roteia usando o **destino** reescrito — meu rewrite
->    `/api/:path*` → `/api` fazia o Express receber só `/api`, nunca `/api/scores`.
->
-> A solução foi simplesmente não brigar com a detecção nativa: deixar só o `server.js` de sempre, sem
-> nenhuma configuração extra.
+> Histórico do que foi tentado e não funcionou, só pra registro (evita repetir o erro):
+> 1. Uma função `@vercel/node` "crua" com `vercel.json` mandando tudo pra ela: o build só empacota o que
+>    é importado via `require`, então a pasta `public/` (só referenciada em runtime) ficava de fora —
+>    `Cannot GET /`.
+> 2. Separar `api/` (função) de `public/` (estático) com `rewrites` manuais no `vercel.json`: a Vercel
+>    avisou que, no que ela chama de "backend framework projects", rewrite passou a rotear usando o
+>    **destino** reescrito — meu rewrite `/api/:path*` → `/api` fazia o Express receber só o caminho
+>    `/api`, nunca `/api/scores`.
+> 3. Remover o `vercel.json` inteiro e confiar em detecção automática de framework: sem pasta `api/`
+>    nenhuma, a Vercel não criou função nenhuma — o site virou puramente estático (por isso nem existia
+>    a opção "Framework Preset" nas configurações). Tudo 404 de novo.
+> 4. Trazer `api/[...path].js` de volta (sem `vercel.json`): a função passou a existir e `/api/scores`
+>    funcionou, mas `/` continuava dando `Cannot GET /` — só que agora era um 404 do **Express**, não da
+>    Vercel (dava pra ver pelo header `X-Powered-By: Express` presente até no erro). Isso apontou pro
+>    problema real: caminho relativo no `express.static`.
+> 5. Trocar pra `path.join(__dirname, 'public')` resolveu — esse é o que ficou no código final.
 
-O que falta fazer no painel da Vercel:
+Passos que foram feitos no painel/CLI da Vercel:
 
-1. Importar o repositório do GitHub em [vercel.com/new](https://vercel.com/new).
-2. Em **Project Settings → General → Framework Preset**, conferir se a Vercel detectou algo como
-   "Express" / "Node.js" (não "Other" genérico e não nenhum framework de frontend tipo Next.js). Se
-   detectou errado, trocar manualmente aqui.
-3. Nas configurações do projeto, adicionar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY`
-   com os mesmos valores do `.env` local (nunca commitados no Git — são adicionados direto no painel).
-4. Fazer o (re)deploy.
-5. Testar a URL pública gerada: jogar uma partida, salvar um score, ver se aparece no ranking.
-6. Atualizar a seção **Acesso** do README com essa URL.
+1. Importar o repositório do GitHub em [vercel.com/new](https://vercel.com/new) (ou `vercel link` pela
+   CLI, que faz a mesma coisa).
+2. Configurar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY` (Project Settings →
+   Environment Variables), com os mesmos valores do `.env` local — nunca commitadas no Git.
+3. Cada push na branch `main` dispara um novo deploy automaticamente.
