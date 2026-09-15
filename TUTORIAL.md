@@ -257,7 +257,8 @@ O que ficou assim no código, depois de algumas tentativas que não funcionaram:
   `/api/*` caía no 404 padrão do Express (`Cannot GET /`).
 - **Nenhum `vercel.json`.** Nenhuma das opções acima precisa de configuração manual de rotas.
 
-> Histórico do que foi tentado e não funcionou, só pra registro (evita repetir o erro):
+> Histórico do que foi tentado e não funcionou, só pra registro (evita repetir o erro — versão completa,
+> com prints do diagnóstico via `curl`, em [DEBUGGING.md](./DEBUGGING.md)):
 > 1. Uma função `@vercel/node` "crua" com `vercel.json` mandando tudo pra ela: o build só empacota o que
 >    é importado via `require`, então a pasta `public/` (só referenciada em runtime) ficava de fora —
 >    `Cannot GET /`.
