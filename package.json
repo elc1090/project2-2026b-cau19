@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/elc1090/project2-2026b-cau19#readme",
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "@supabase/supabase-js": "^2.116.0",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }
 }

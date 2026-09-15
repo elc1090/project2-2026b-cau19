@@ -1,15 +1,16 @@
-const Database = require('better-sqlite3');
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
-// Arquivo local do banco. Sera criado automaticamente na primeira execucao.
-const db = new Database('database.db');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS scores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    score INTEGER NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    'SUPABASE_URL e SUPABASE_KEY nao definidos. Copie .env.example para .env e preencha com as ' +
+      'chaves do seu projeto Supabase (Project Settings > API).'
+  );
+}
 
-module.exports = db;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+module.exports = supabase;

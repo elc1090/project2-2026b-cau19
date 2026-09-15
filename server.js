@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('./database');
+const supabase = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,15 +8,23 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Retorna o top 10 do ranking, do maior score para o menor
-app.get('/api/scores', (req, res) => {
-  const scores = db
-    .prepare('SELECT name, score, created_at FROM scores ORDER BY score DESC LIMIT 10')
-    .all();
-  res.json(scores);
+app.get('/api/scores', async (req, res) => {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('name, score, created_at')
+    .order('score', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao buscar o ranking' });
+  }
+
+  res.json(data);
 });
 
 // Recebe um novo score e salva no banco
-app.post('/api/scores', (req, res) => {
+app.post('/api/scores', async (req, res) => {
   const { name, score } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
@@ -26,10 +34,18 @@ app.post('/api/scores', (req, res) => {
     return res.status(400).json({ error: 'Score invalido' });
   }
 
-  const insert = db.prepare('INSERT INTO scores (name, score) VALUES (?, ?)');
-  const result = insert.run(name.trim().slice(0, 20), Math.floor(score));
+  const { data, error } = await supabase
+    .from('scores')
+    .insert({ name: name.trim().slice(0, 20), score: Math.floor(score) })
+    .select()
+    .single();
 
-  res.status(201).json({ id: result.lastInsertRowid, name, score });
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao salvar o score' });
+  }
+
+  res.status(201).json(data);
 });
 
 app.listen(PORT, () => {
