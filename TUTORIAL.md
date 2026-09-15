@@ -234,14 +234,27 @@ conversa com o banco.
 
 ---
 
-## Fase 3 — Deploy (pendente)
+## Fase 3 — Deploy na Vercel (código pronto, deploy em si pendente)
 
-Falta publicar o projeto na internet para ele ter uma URL pública de acesso:
+> ⚠️ **Status: o projeto já está preparado para rodar na Vercel, mas o deploy em si (clicar em "Import
+> Project", configurar env vars, etc.) fica por sua conta.**
 
-1. Escolher onde hospedar (Render ou Vercel são boas opções gratuitas para um projeto Node/Express).
-2. Configurar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY` no painel do serviço de deploy
-   (do mesmo jeito que estão no `.env` local — nunca commitadas no Git).
-3. Apontar o comando de start do serviço para `npm start`.
-4. Testar a URL pública e atualizar a seção **Acesso** do README.
+O que já foi feito no código para isso funcionar:
 
-Vamos detalhar isso quando chegar a hora do deploy.
+- `server.js` agora também faz `module.exports = app`, além de `app.listen(...)`. Isso é necessário
+  porque na Vercel o servidor não roda com `node server.js` continuamente — a Vercel importa o `app`
+  exportado e o chama como função serverless a cada requisição. Por isso o `app.listen(...)` está dentro
+  de `if (!process.env.VERCEL) { ... }`: localmente (`npm start`) ele sobe um servidor normal; na Vercel,
+  essa parte é ignorada.
+- `vercel.json` na raiz do projeto diz pra Vercel tratar `server.js` como uma função Node
+  (`@vercel/node`) e mandar todas as rotas pra ele — inclusive as estáticas (`/`, `/game.js`,
+  `/style.css`), porque o próprio Express (`express.static('public')`) já sabe servi-las.
+
+O que falta fazer no painel da Vercel:
+
+1. Importar o repositório do GitHub em [vercel.com/new](https://vercel.com/new).
+2. Nas configurações do projeto, adicionar as variáveis de ambiente `SUPABASE_URL` e `SUPABASE_KEY`
+   com os mesmos valores do `.env` local (nunca commitados no Git — são adicionados direto no painel).
+3. Fazer o deploy.
+4. Testar a URL pública gerada: jogar uma partida, salvar um score, ver se aparece no ranking.
+5. Atualizar a seção **Acesso** do README com essa URL.
