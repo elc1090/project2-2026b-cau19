@@ -11,8 +11,8 @@ const rankingList = document.getElementById('ranking-list');
 
 // ---- Constantes do jogo ----
 const GROUND_Y = 160; // altura do "chao" dentro do canvas
-const GRAVITY = 0.6;
-const JUMP_FORCE = -10;
+const GRAVITY = 0.2;
+const JUMP_FORCE = -5;
 
 // velocidade dos obstaculos: comeca lenta e sobe aos poucos ate um teto,
 // pra dar tempo do jogador se acostumar antes de ficar dificil
