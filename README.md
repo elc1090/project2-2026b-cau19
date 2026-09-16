@@ -21,16 +21,20 @@ final da partida para entrar em uma tela de ranking com os maiores scores. O fro
 backend por meio de uma API (leitura e escrita), e os dados de ranking são persistidos do lado do
 servidor.
 
-Modalidade: **B** (parceria com colega usuário/cliente, para feedback de funcionalidades e interface).
+Modalidade: **A** (parceria dev com Ricardo Facco Pigatto — comparação de decisões de código entre duas
+implementações do mesmo "Dino Game").
 
 ## Parceria/cliente/usuário
 
-> A definir. Modalidade B: encontre um(a) colega para jogar sua versão e dar feedback sobre a
-> experiência (não sobre o código).
+Ricardo Facco Pigatto, autor da proposta original do "Dino Game" no documento de definições da
+disciplina — também está desenvolvendo sua própria versão do jogo. Parceria de código (modalidade A):
+comparar as decisões de implementação entre os dois projetos.
 
 ## Feedback/comentário da parceria/cliente/usuário
 
-> A ser preenchido pelo(a) colega parceiro(a), com foco em funcionalidades e interface (modalidade B).
+> A ser preenchido pelo Ricardo, com foco nas diferenças percebidas no código entre as duas
+> implementações (modalidade A) — por exemplo, escolhas de stack, estrutura do backend, física do jogo,
+> modelagem do banco de dados.
 
 ## Desenvolvimento
 
