@@ -40,11 +40,21 @@ comparar as decisões de implementação entre os dois projetos.
 
 ### Processo
 
-> **Esta seção deve ser escrita por você, em primeira pessoa, sem ajuda de IA** (é uma exigência do
-> enunciado do projeto). Use o [TUTORIAL.md](./TUTORIAL.md) como referência do que foi feito, mas
-> escreva com suas próprias palavras: o que você já sabia, o que aprendeu, que dúvidas teve (ex: como
-> funciona a física do pulo? por que usar SQLite antes de um banco "de verdade"? como funcionou a
-> colisão?), que dificuldades apareceram e como resolveu.
+Iniciei o projeto com pouca experiência prévia — apenas HTML e CSS soltos, sem contato com JavaScript —
+e escolhi o Dino Game acreditando que seria fácil por causa do backend simples. A dificuldade real,
+porém, esteve na lógica do jogo: minha maior virada de chave foi entender que o HTML/CSS criam a
+estrutura prévia (como o `<canvas id="game-canvas">`) e o JavaScript apenas manipula esse elemento via
+`document.getElementById`, quadro a quadro.
+
+Para viabilizar o desenvolvimento, adaptei minha ideia inicial e trabalhei em conjunto com IA para
+estruturar tutoriais, analisar código e resolver problemas mais complexos — como debugar um erro 404 na
+Vercel, processo em que acompanhei e aprovei cada etapa. Ao mesmo tempo, mantive a mão na massa:
+estruturei o HTML, ajustei manualmente a física do pulo e da gravidade, e escrevi trechos de código de
+forma guiada.
+
+Olhando para trás, hoje eu seguiria a dica da professora e escolheria algo como um formulário — a lógica
+em tempo real do jogo pesou mais do que eu esperava. Ainda assim, o processo foi uma descoberta valiosa
+e honesta sobre como construir e entender software.
 
 ### Trechos de código
 
