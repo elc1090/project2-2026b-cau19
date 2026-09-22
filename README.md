@@ -1,9 +1,6 @@
 # Projeto: Dino Game com persistência de dados em backend
 
-![GIF do jogo em ação — adicionar depois que o jogo estiver jogável](./demo.gif "Demonstração do Dino Game")
-
-> `demo.gif` ainda não existe. Depois de jogar uma partida, grave a tela (ex: ScreenToGif, Xbox Game Bar
-> `Win+G`, ou o gravador de tela do navegador) e salve o arquivo como `demo.gif` na raiz do repositório.
+![GIF do jogo em ação](./demo.gif "Demonstração do Dino Game")
 
 ## Acesso
 
@@ -58,11 +55,62 @@ e honesta sobre como construir e entender software.
 
 ### Trechos de código
 
-> Escolha pelo menos 3 trechos para destacar e explique cada um com suas palavras. Sugestões de onde
-> olhar, já que são os pontos mais didáticos do projeto:
-> 1. A física do pulo em [game.js](./public/game.js) (variáveis `velocityY` e `GRAVITY`).
-> 2. A detecção de colisão por retângulos (`rectsOverlap`) em [game.js](./public/game.js).
-> 3. As rotas da API (`GET /api/scores` e `POST /api/scores`) em [server.js](./server.js).
+**1. Física do pulo** — [game.js](./public/game.js)
+
+```js
+dino.velocityY += GRAVITY;
+dino.y += dino.velocityY;
+if (dino.y > GROUND_Y - dino.height) {
+  dino.y = GROUND_Y - dino.height;
+  dino.velocityY = 0;
+}
+```
+
+Não existe nenhuma fórmula de parábola escrita à mão. A cada quadro, a gravidade é somada à velocidade
+vertical, e a velocidade é somada à posição. O pulo (`JUMP_FORCE = -5`) só define uma velocidade inicial
+negativa ("pra cima"); a gravidade puxa essa velocidade de volta pra positivo sozinha, quadro a quadro —
+a curva de subida e descida do pulo emerge naturalmente desse laço, sem precisar calcular nenhuma
+trajetória de antemão.
+
+**2. Colisão por retângulos (AABB)** — [game.js](./public/game.js)
+
+```js
+function rectsOverlap(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+```
+
+Técnica *Axis-Aligned Bounding Box*: dois retângulos colidem se há sobreposição no eixo X **e** no eixo Y
+ao mesmo tempo — se estiverem separados em qualquer um dos dois eixos, não colidem. É por isso que dá
+pra desviar pulando: o pulo muda a posição Y bem na hora certa pra "escapar" da sobreposição, mesmo
+estando na mesma posição X do obstáculo.
+
+**3. Uso do Canvas para montar o jogo** — [game.js](./public/game.js)
+
+```js
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+```
+
+```js
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // nuvens, chao, dino, obstaculos — cada um desenhado na ordem de "fundo pra frente"
+}
+```
+
+`canvas` é só um retângulo em branco no HTML, sem nenhum desenho embutido. `ctx` (contexto de desenho) é
+o objeto obtido a partir dele que efetivamente sabe desenhar — retângulos (`fillRect`), imagens
+(`drawImage`), linhas (`stroke`). O jogo inteiro é uma sequência de "fotografias" desenhadas do zero a
+cada quadro: `clearRect` apaga o desenho anterior, e cada elemento é redesenhado na ordem certa (fundo
+primeiro, personagem por último), sempre nas posições recém-calculadas por `update()`. É a repetição
+disso ~60 vezes por segundo, via `requestAnimationFrame`, que cria a sensação de movimento contínuo a
+partir de imagens estáticas.
 
 ## Tecnologias
 
@@ -91,6 +139,8 @@ e honesta sobre como construir e entender software.
 - [Documentação do Supabase](https://supabase.com/docs)
 - [Documentação do supabase-js](https://supabase.com/docs/reference/javascript/introduction)
 - [Documentação de Row Level Security do Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security)
+- [Google Fonts — Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) (fonte pixelada
+  usada no título e no HUD)
 - Ideia original do "Dino Game" proposta por Ricardo Facco Pigatto no documento de definições da
   disciplina.
 
